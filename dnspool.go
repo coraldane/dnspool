@@ -88,23 +88,23 @@ func LookupHost(host string) (addrs []string, err error) {
 // Dial has the same usage as as net.Dial. This function will use LookupHost
 // to resolve host address, then try net.Dial on each returned ip address till
 // one succeeds or all fail.
-func Dial(hostPort string) (c net.Conn, err error) {
+func Dial(netw, addr string) (c net.Conn, err error) {
 	var addrs []string
 	var host, port string
 
-	if host, port, err = net.SplitHostPort(hostPort); err != nil {
+	if host, port, err = net.SplitHostPort(addr); err != nil {
 		return
 	}
 	// No need to call LookupHost if host part is IP address
 	if ip := net.ParseIP(host); ip != nil {
-		return net.Dial("tcp", hostPort)
+		return net.Dial(netw, addr)
 	}
 	if addrs, err = LookupHost(host); err != nil {
 		return
 	}
 	for _, ip := range addrs {
 		ipHost := net.JoinHostPort(ip, port)
-		if c, err = net.Dial("tcp", ipHost); err == nil {
+		if c, err = net.Dial(netw, ipHost); err == nil {
 			return
 		}
 	}
