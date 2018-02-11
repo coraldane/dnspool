@@ -14,6 +14,7 @@ package dnspool
 import (
 	"fmt"
 	"net"
+	"time"
 )
 
 type lookupRequest struct {
@@ -105,6 +106,29 @@ func Dial(netw, addr string) (c net.Conn, err error) {
 	for _, ip := range addrs {
 		ipHost := net.JoinHostPort(ip, port)
 		if c, err = net.Dial(netw, ipHost); err == nil {
+			return
+		}
+	}
+	return nil, err
+}
+
+func DialTimeout(netw, addr string, cTimeout time.Duration) (c net.Conn, err error) {
+	var addrs []string
+	var host, port string
+
+	if host, port, err = net.SplitHostPort(addr); err != nil {
+		return
+	}
+	// No need to call LookupHost if host part is IP address
+	if ip := net.ParseIP(host); ip != nil {
+		return net.Dial(netw, addr)
+	}
+	if addrs, err = LookupHost(host); err != nil {
+		return
+	}
+	for _, ip := range addrs {
+		ipHost := net.JoinHostPort(ip, port)
+		if c, err = net.DialTimeout(netw, ipHost, cTimeout); err == nil {
 			return
 		}
 	}
